@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Results · ATS Resume Tailor{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>{{ a.job_title or "Analysis results" }}</h1>
+    {% if a.company_name %}<p class="muted">{{ a.company_name }}</p>{% endif %}
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('main.history_detail', analysis_id=a.id) }}">Saved summary</a>
+    <a class="btn btn-primary" href="{{ url_for('main.analyze_form') }}">New analysis</a>
+  </div>
+</header>
+
+{% if ctx %}
+<section class="card generate-card" aria-labelledby="generate-title">
+  <h2 id="generate-title">Generate a tailored, ATS-friendly resume</h2>
+  <p class="muted">Builds a clean single-column resume from <strong>your own</strong> content, reordered for this job. It never invents skills, projects, employers, certifications or metrics. You can review and edit everything before downloading a PDF or Word file.</p>
+  <form id="generate-form" method="post" action="{{ url_for('resume.generate') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="ctx" value="{{ ctx }}">
+    {% if a.missing %}
+      <fieldset class="confirm-skills">
+        <legend>Skills the job asks for that aren't in your resume</legend>
+        <p class="help">Tick a skill <strong>only if you genuinely have it</strong>. Unticked skills are never added.</p>
+        <ul class="checks">
+          {% for m in a.missing %}
+            <li><label class="check"><input type="checkbox" name="confirm_skill" value="{{ m.term }}"> {{ m.term }} <span class="chip-note">{{ m.level }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </fieldset>
+    {% endif %}
+    <div class="actions">
+      <button id="generate-btn" class="btn btn-primary btn-large" type="submit">Generate Tailored Resume</button>
+      {% if has_draft %}<a class="btn" href="{{ url_for('resume.preview', token=ctx) }}">Open current draft</a>{% endif %}
+      <span id="generate-loading" class="muted" hidden role="status">Generating your resume…</span>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+{% set show_evidence = true %}
+{% include "_analysis_body.html" %}
+<p class="disclaimer">Your resume file was not saved. Your resume text is kept in this server's memory only (for up to {{ (config.CONTEXT_TTL_SECONDS / 3600)|round(1) }} hours) so you can generate a tailored version; it is never written to disk or history. Only the keyword results above (without resume excerpts) are stored in your history.</p>
+{% endblock %}

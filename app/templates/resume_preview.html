@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Tailored resume · ATS Resume Tailor{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Your tailored resume</h1>
+    <p class="muted">Review, edit, then download.{% if job_title %} Tailored for: {{ job_title }}.{% endif %}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('main.analysis_view', token=token) }}">Back to analysis results</a>
+  </div>
+</header>
+
+<div class="notice" role="note">
+  <strong>Please verify before you apply.</strong> Check every line for accuracy. Only keep skills, dates and achievements that are true. The keyword coverage below is an estimate, not an official ATS score, and does not guarantee interviews or hiring.
+</div>
+
+<section class="card" aria-labelledby="dl-title">
+  <h2 id="dl-title">Download</h2>
+  {% if report and report.ok %}
+    <p class="muted">Both files were generated from the saved version below and passed all export checks. Save any edits first; downloads always use the last saved version.</p>
+    <div class="actions">
+      <a class="btn btn-primary btn-large" href="{{ url_for('resume.download_pdf', token=token) }}">Download ATS Resume (PDF)</a>
+      <a class="btn btn-primary btn-large" href="{{ url_for('resume.download_docx', token=token) }}">Download ATS Resume (DOCX)</a>
+    </div>
+  {% else %}
+    <p class="error-text" role="alert">Downloads are unavailable until the export checks below pass{% if not report %} (the checks could not run — please try again){% endif %}.</p>
+    <div class="actions">
+      <span class="btn btn-large btn-disabled" aria-disabled="true">Download ATS Resume (PDF)</span>
+      <span class="btn btn-large btn-disabled" aria-disabled="true">Download ATS Resume (DOCX)</span>
+    </div>
+  {% endif %}
+</section>
+
+{% if notes %}
+<section class="card">
+  <h2>What was changed</h2>
+  <ul class="plain-list">
+    {% for note in notes %}<li>{{ note }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="prev-title">
+  <h2 id="prev-title">Preview (saved version)</h2>
+  <p class="help">This is the exact content of both downloads: single column, standard headings, plain text.</p>
+  {% set ns = namespace(in_list=false) %}
+  <article class="paper" aria-label="Resume preview">
+    {%- for b in blocks -%}
+      {%- if b.kind != 'bullet' and ns.in_list %}</ul>{% set ns.in_list = false %}{% endif -%}
+      {%- if b.kind == 'name' %}<h3 class="r-name">{{ b.text }}</h3>
+      {%- elif b.kind in ('headline', 'contact', 'links') %}<p class="r-center">{{ b.text }}</p>
+      {%- elif b.kind == 'heading' %}<h4 class="r-heading">{{ b.text }}</h4>
+      {%- elif b.kind == 'entry_heading' %}<p class="r-entry">{{ b.text }}</p>
+      {%- elif b.kind == 'skill' %}<p class="r-line">{% if b.label %}<strong>{{ b.label }}:</strong> {% endif %}{{ b.text }}</p>
+      {%- elif b.kind == 'bullet' %}{% if not ns.in_list %}<ul class="r-list">{% set ns.in_list = true %}{% endif %}<li>{{ b.text }}</li>
+      {%- else %}<p class="r-line">{{ b.text }}</p>
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if ns.in_list %}</ul>{% endif %}
+  </article>
+</section>
+
+<section class="card">
+  <h2>Keyword coverage of this resume</h2>
+  <p class="muted">
+    {% if coverage.score is none %}No recognizable skills in the job description.{% else %}
+      Estimated coverage: <strong>{{ "%.0f"|format(coverage.score) }}%</strong>
+      {% if coverage.original_score is not none %}(your original resume: {{ "%.0f"|format(coverage.original_score) }}%){% endif %}.
+    {% endif %}
+    Same method and formula as the analysis (80% required, 20% preferred). It is an estimate, not an official ATS score.
+  </p>
+  <div class="grid grid-2">
+    <div>
+      <h3>Required skills: matched ({{ coverage.matched_required|length }})</h3>
+      <ul class="chips">{% for t in coverage.matched_required %}<li><span class="chip">{{ t }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}</ul>
+      <h3>Required skills: missing ({{ coverage.missing_required|length }})</h3>
+      <ul class="chips">{% for t in coverage.missing_required %}<li><span class="chip chip-required">{{ t }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h3>Preferred skills: matched ({{ coverage.matched_preferred|length }})</h3>
+      <ul class="chips">{% for t in coverage.matched_preferred %}<li><span class="chip">{{ t }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}</ul>
+      <h3>Preferred skills: missing ({{ coverage.missing_preferred|length }})</h3>
+      <ul class="chips">{% for t in coverage.missing_preferred %}<li><span class="chip">{{ t }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}</ul>
+    </div>
+  </div>
+  {% if coverage.missing_required or coverage.missing_preferred %}
+    <p class="help">Missing skills were not added because they aren't in your resume. If you genuinely have one, add it in the editor with real evidence.</p>
+  {% endif %}
+</section>
+
+<section class="card" aria-labelledby="edit-title">
+  <h2 id="edit-title">Edit content</h2>
+  <p class="help">Plain-text editor. Projects, Experience and Education: separate entries with a blank line; the first line is the heading, lines starting with "- " are bullet points, other lines are details (company, dates). Skills: one group per line, e.g. "Languages: Python, SQL".</p>
+  <form id="edit-form" class="form" method="post" action="{{ url_for('resume.save', token=token) }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="grid grid-2">
+      {% for field, label, kind in [("name","Full name","text"),("headline","Headline (optional)","text"),("email","Email","text"),("phone","Phone","text"),("location","Location","text")] %}
+        <div class="field">
+          <label for="f-{{ field }}">{{ label }}</label>
+          <input id="f-{{ field }}" name="{{ field }}" type="text" value="{{ form.get(field, '') }}" aria-describedby="e-{{ field }}">
+          <p id="e-{{ field }}" class="error" role="alert">{{ errors.get(field, '') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% for field, label, rows in [
+      ("links","Links (one per line, e.g. linkedin.com/in/you)",3),
+      ("summary","Professional Summary",4),
+      ("skills","Technical Skills",5),
+      ("projects","Projects",12),
+      ("experience","Experience",10),
+      ("education","Education",6),
+      ("certifications","Certifications (one per line)",4),
+      ("additional",'Additional sections (optional: "## Title" then one item per line)',4)] %}
+      <div class="field">
+        <label for="f-{{ field }}">{{ label }}</label>
+        <textarea id="f-{{ field }}" name="{{ field }}" rows="{{ rows }}" aria-describedby="e-{{ field }}">{{ form.get(field, '') }}</textarea>
+        <p id="e-{{ field }}" class="error" role="alert">{{ errors.get(field, '') }}</p>
+      </div>
+    {% endfor %}
+
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">Save changes</button>
+    </div>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="checks-title">
+  <h2 id="checks-title">Export checks</h2>
+  {% if report %}
+    <p class="muted">Both files are read back and checked before they can be downloaded.</p>
+    {% for title, grp in [("Resume content", report.content), ("PDF", report.pdf), ("Word (DOCX)", report.docx), ("PDF vs DOCX", report.cross)] %}
+      <h3>{{ title }}: {{ "passed" if grp.ok else "needs attention" }}</h3>
+      <ul class="check-list">
+        {% for c in grp.checks %}
+          <li class="{{ 'pass' if c.ok else 'fail' }}"><span aria-hidden="true">{{ "✓" if c.ok else "✗" }}</span> <span class="sr-only">{{ "Passed:" if c.ok else "Failed:" }}</span> {{ c.label }}{% if c.detail %} <span class="muted">({{ c.detail }})</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% else %}
+    <p class="error-text" role="alert">The export checks could not run. Please reload the page.</p>
+  {% endif %}
+</section>
+
+<section class="card danger-zone">
+  <h2>Privacy</h2>
+  <p class="muted">Your resume text is kept in server memory only while you work, and is removed automatically after a time limit.</p>
+  <form method="post" action="{{ url_for('resume.discard', token=token) }}" data-confirm="Remove your resume data now? You will need to run the analysis again.">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-danger" type="submit">Discard my resume data</button>
+  </form>
+</section>
+{% endblock %}

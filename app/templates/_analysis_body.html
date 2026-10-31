@@ -1,0 +1,100 @@
+{# Shared by results.html and history_detail.html. Expects `a` and `show_evidence`. #}
+{% set bd = a.breakdown %}
+
+<section class="card score-card" aria-label="Estimated match score">
+  {% if a.match_score is none %}
+    <div class="score-ring empty"><span>N/A</span></div>
+    <div>
+      <h2>No score available</h2>
+      <p class="muted">No recognizable skills were found in the job description, so there is nothing to compare.</p>
+    </div>
+  {% else %}
+    <div class="score-ring" style="--pct: {{ a.match_score|float }}" role="img" aria-label="Estimated match: {{ '%.0f'|format(a.match_score) }} percent">
+      <span>{{ "%.0f"|format(a.match_score) }}%</span>
+    </div>
+    <div>
+      <h2>Estimated keyword match</h2>
+      <p class="muted">Overlap between the skills in the job description and your resume. This is an estimate, not an official ATS score or a hiring prediction.</p>
+    </div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Score breakdown</h2>
+  <table class="table">
+    <thead><tr><th scope="col">Group</th><th scope="col">Matched</th><th scope="col">Coverage</th><th scope="col">Weight</th></tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row">Required skills</th>
+        <td>{{ bd.get("required_matched", 0) }} of {{ bd.get("required_total", 0) }}</td>
+        <td>{% if bd.get("required_coverage") is none %}—{% else %}{{ bd.required_coverage }}%{% endif %}</td>
+        <td>80%</td>
+      </tr>
+      <tr>
+        <th scope="row">Preferred skills</th>
+        <td>{{ bd.get("preferred_matched", 0) }} of {{ bd.get("preferred_total", 0) }}</td>
+        <td>{% if bd.get("preferred_coverage") is none %}—{% else %}{{ bd.preferred_coverage }}%{% endif %}</td>
+        <td>20%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="help">Overall = 80% × required coverage + 20% × preferred coverage. If the posting has only one group, that group's coverage is the score. Only exact matches (and listed aliases like JS = JavaScript) count; related terms do not.</p>
+</section>
+
+<section class="card">
+  <h2>Matched keywords <span class="count">{{ a.matched|length }}</span></h2>
+  {% if a.matched %}
+    <table class="table">
+      <thead><tr><th scope="col">Skill</th><th scope="col">Type</th>{% if show_evidence %}<th scope="col">Where it appears in your resume</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for m in a.matched %}
+          <tr>
+            <th scope="row">{{ m.term }}</th>
+            <td><span class="badge badge-{{ m.level }}">{{ m.level }}</span></td>
+            {% if show_evidence %}<td class="evidence">{{ m.evidence }}</td>{% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not show_evidence %}<p class="help">Resume excerpts are not saved, so evidence is only shown right after an analysis.</p>{% endif %}
+  {% else %}
+    <p class="muted">No job skills were found in the resume.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Missing keywords <span class="count">{{ a.missing|length }}</span></h2>
+  {% if a.missing %}
+    <ul class="chips">
+      {% for m in a.missing %}
+        <li><span class="chip chip-{{ m.level }}">{{ m.term }} <span class="chip-note">{{ m.level }}</span></span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">Nothing missing from the skills found in the job description.</p>
+  {% endif %}
+
+  {% if a.related %}
+    <h3>Related experience to review</h3>
+    <ul class="list">
+      {% for r in a.related %}
+        <li>
+          <strong>{{ r.term }}</strong>
+          <span class="muted">Your resume mentions {{ r.resume_has|join(", ") }}. Related, but not the same skill, so it is not counted as a match.</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Recommendations</h2>
+  <ol class="recs">
+    {% for r in a.recommendations %}
+      <li>
+        <span class="badge badge-{{ r.priority }}">{{ r.priority }}</span>
+        <div><strong>{{ r.title }}</strong><p>{{ r.detail }}</p></div>
+      </li>
+    {% endfor %}
+  </ol>
+</section>

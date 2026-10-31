@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}New analysis · ATS Resume Tailor{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>New analysis</h1>
+    <p class="muted">Upload a resume and paste the job description. Your file is never saved; its text stays in memory only (for a limited time) so you can generate a tailored resume. History keeps just the keyword results.</p>
+  </div>
+</header>
+
+<form id="analyze-form" class="card form" method="post" action="{{ url_for('main.analyze_submit') }}" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="field">
+    <label for="resume">Resume (PDF or DOCX, up to {{ "%g"|format(max_mb) }} MB)</label>
+    <div id="dropzone" class="dropzone" data-max-bytes="{{ (max_mb * 1024 * 1024)|int }}">
+      <p><strong>Drag and drop</strong> your resume here, or</p>
+      <input id="resume" name="resume" type="file" accept=".pdf,.docx" required
+             aria-describedby="resume-help {% if errors.resume %}resume-error{% endif %}">
+      <p id="file-name" class="muted" aria-live="polite"></p>
+    </div>
+    <p id="resume-help" class="help">Text-based files only. Scanned (image-only) PDFs need OCR, which isn't supported yet.</p>
+    <p id="resume-error" class="error" role="alert">{{ errors.resume or "" }}</p>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="field">
+      <label for="job_title">Job title <span class="muted">(optional)</span></label>
+      <input id="job_title" name="job_title" type="text" maxlength="120" value="{{ form.job_title or '' }}">
+      {% if errors.job_title %}<p class="error" role="alert">{{ errors.job_title }}</p>{% endif %}
+    </div>
+    <div class="field">
+      <label for="company_name">Company <span class="muted">(optional)</span></label>
+      <input id="company_name" name="company_name" type="text" maxlength="120" value="{{ form.company_name or '' }}">
+      {% if errors.company_name %}<p class="error" role="alert">{{ errors.company_name }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="job_description">Job description</label>
+    <textarea id="job_description" name="job_description" rows="12" required
+              aria-describedby="{% if errors.job_description %}jd-error{% endif %}">{{ form.job_description or '' }}</textarea>
+    <p id="jd-error" class="error" role="alert">{{ errors.job_description or "" }}</p>
+  </div>
+
+  <div class="actions">
+    <button id="submit-btn" class="btn btn-primary" type="submit">Analyze resume</button>
+    <span id="loading" class="muted" hidden role="status">Analyzing…</span>
+  </div>
+</form>
+{% endblock %}

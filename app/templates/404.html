@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found · ATS Resume Tailor{% endblock %}
+{% block content %}
+<section class="card empty">
+  <h1>Page not found</h1>
+  <p class="muted">That page or analysis doesn't exist (it may have been deleted).</p>
+  <a class="btn btn-primary" href="{{ url_for('main.index') }}">Back to dashboard</a>
+</section>
+{% endblock %}

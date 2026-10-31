@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ATS Resume Tailor{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="{{ url_for('main.index') }}">
+        <span class="brand-mark" aria-hidden="true">AT</span>
+        <span>ATS Resume Tailor</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="nav">
+          <li><a href="{{ url_for('main.index') }}" {% if request.endpoint == 'main.index' %}aria-current="page"{% endif %}>Dashboard</a></li>
+          <li><a href="{{ url_for('main.analyze_form') }}" {% if request.endpoint in ('main.analyze_form', 'main.analyze_submit') %}aria-current="page"{% endif %}>New analysis</a></li>
+          <li><a href="{{ url_for('main.history') }}" {% if request.endpoint in ('main.history', 'main.history_detail') %}aria-current="page"{% endif %}>History</a></li>
+        </ul>
+      </nav>
+      <p class="sidebar-note">Resumes are processed locally and never saved to disk.</p>
+    </aside>
+
+    <main id="main" class="content" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

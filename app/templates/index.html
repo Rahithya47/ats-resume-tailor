@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · ATS Resume Tailor{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Compare a resume with a job description and see which keywords match.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('main.analyze_form') }}">New analysis</a>
+</header>
+
+<section class="grid grid-2" aria-label="Summary">
+  <div class="card stat">
+    <span class="stat-label">Total analyses</span>
+    <span class="stat-value">{{ total }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat-label">Latest estimated match</span>
+    {% if latest and latest.match_score is not none %}
+      <span class="stat-value">{{ "%.0f"|format(latest.match_score) }}%</span>
+    {% else %}
+      <span class="stat-value muted">—</span>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Recent activity</h2>
+    <a href="{{ url_for('main.history') }}">View all</a>
+  </div>
+  {% if recent %}
+    <ul class="list">
+      {% for item in recent %}
+        <li>
+          <a href="{{ url_for('main.history_detail', analysis_id=item.id) }}">
+            {{ item.job_title or "Untitled role" }}{% if item.company_name %} · {{ item.company_name }}{% endif %}
+          </a>
+          <span class="muted">{{ item.created_at|dt }}</span>
+          <span class="badge">{% if item.match_score is none %}N/A{% else %}{{ "%.0f"|format(item.match_score) }}%{% endif %}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="empty">
+      <p>No analyses yet.</p>
+      <a class="btn" href="{{ url_for('main.analyze_form') }}">Run your first analysis</a>
+    </div>
+  {% endif %}
+</section>
+
+<p class="disclaimer">Scores are an estimated keyword match, not an official ATS score or a prediction of hiring outcomes.</p>
+{% endblock %}

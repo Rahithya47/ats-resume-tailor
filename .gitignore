@@ -1,0 +1,38 @@
+# Secrets and local config
+.env
+
+# Virtual environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Private data: databases and resumes must never be committed
+instance/*
+!instance/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+*.pdf
+*.docx
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+.vercel
+.env*
+.env
+
+.env.local
+.vercel/
+instance/
+.venv/
+__pycache__/
+.pytest_cache/

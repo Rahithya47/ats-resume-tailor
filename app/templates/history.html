@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}History · ATS Resume Tailor{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>History</h1>
+    <p class="muted">Keyword results from previous analyses. No resume content is stored.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('main.analyze_form') }}">New analysis</a>
+</header>
+
+{% if analyses %}
+  <section class="card">
+    <table class="table">
+      <thead><tr><th scope="col">Date</th><th scope="col">Job</th><th scope="col">Score</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody>
+        {% for item in analyses %}
+          <tr>
+            <td>{{ item.created_at|dt }}</td>
+            <td>
+              <a href="{{ url_for('main.history_detail', analysis_id=item.id) }}">{{ item.job_title or "Untitled role" }}</a>
+              {% if item.company_name %}<span class="muted"> · {{ item.company_name }}</span>{% endif %}
+            </td>
+            <td><span class="badge">{% if item.match_score is none %}N/A{% else %}{{ "%.0f"|format(item.match_score) }}%{% endif %}</span></td>
+            <td>
+              <form method="post" action="{{ url_for('main.delete_one', analysis_id=item.id) }}" data-confirm="Delete this analysis? This cannot be undone.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-danger btn-small" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card danger-zone">
+    <h2>Delete all history</h2>
+    <form method="post" action="{{ url_for('main.delete_all') }}" data-confirm="Delete ALL analysis history? This cannot be undone.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="check"><input type="checkbox" name="confirm" value="yes" required> I understand this permanently deletes every saved analysis.</label>
+      <button class="btn btn-danger" type="submit">Delete all</button>
+    </form>
+  </section>
+{% else %}
+  <section class="card empty">
+    <p>No saved analyses yet.</p>
+    <a class="btn" href="{{ url_for('main.analyze_form') }}">Run an analysis</a>
+  </section>
+{% endif %}
+{% endblock %}

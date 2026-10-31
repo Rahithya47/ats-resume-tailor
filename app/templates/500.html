@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Error · ATS Resume Tailor{% endblock %}
+{% block content %}
+<section class="card empty">
+  <h1>{{ title or "Something went wrong" }}</h1>
+  <p class="muted">{{ message or "An unexpected error occurred." }}</p>
+  <a class="btn btn-primary" href="{{ url_for('main.index') }}">Back to dashboard</a>
+</section>
+{% endblock %}
